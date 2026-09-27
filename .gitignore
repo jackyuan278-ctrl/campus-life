@@ -1,0 +1,12 @@
+target/
+*.class
+.idea/
+*.iml
+.vscode/
+logs/
+*.log
+application-local.yml
+# 真实中间件地址/密码只存本地，公开仓库不提交
+application-dev.yml
+node_modules/
+dist/
