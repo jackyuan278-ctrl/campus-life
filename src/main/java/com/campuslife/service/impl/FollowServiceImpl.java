@@ -1,7 +1,11 @@
 package com.campuslife.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campuslife.common.BizException;
 import com.campuslife.domain.po.Follow;
+import com.campuslife.domain.po.User;
 import com.campuslife.mapper.FollowMapper;
 import com.campuslife.mapper.UserMapper;
 import com.campuslife.service.IFollowService;
@@ -9,11 +13,13 @@ import com.campuslife.domain.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-/**
- * 实现留白：核心业务由你实现（IFollowService 的 javadoc 即契约）。
- */
 @Service
 @RequiredArgsConstructor
 public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> implements IFollowService {
@@ -22,20 +28,46 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public void follow(Long targetUserId, Long userId) {
-        // TODO 由你实现：不能关注自己 → 校验目标用户存在 → 查重（重复抛"请勿重复关注"）→ insert
-        throw new UnsupportedOperationException("TODO: follow 由你实现");
+        if (targetUserId.equals(userId)) {
+            throw new BizException(400,"不能关注自己");
+        }
+        boolean exists = lambdaQuery().eq(Follow::getUserId, userId).eq(Follow::getFollowUserId, targetUserId).exists();
+        if (exists) {
+            throw new BizException(400,"请勿重复关注");
+        }
+        Follow follow = new Follow();
+        follow.setFollowUserId(targetUserId);
+        follow.setUserId(userId);
+        follow.setCreateTime(LocalDateTime.now());
+        save(follow);
     }
 
     @Override
     public void unfollow(Long targetUserId, Long userId) {
-        // TODO 由你实现：delete where userId + followUserId，删 0 行也静默返回（幂等）
-        throw new UnsupportedOperationException("TODO: unfollow 由你实现");
+        LambdaQueryChainWrapper<Follow> eq = lambdaQuery().eq(Follow::getFollowUserId, targetUserId).eq(Follow::getUserId, userId);
+        remove(eq);
     }
 
     @Override
     public List<UserVO> queryMine(Long userId) {
-        // TODO 由你实现：查 tb_follow（createTime 倒序）→ selectBatchIds 补用户
-        // selectBatchIds 返回顺序与入参无关，按 follow 记录顺序从 Map 里取
-        throw new UnsupportedOperationException("TODO: queryMine 由你实现");
+        List<Follow> list = this.lambdaQuery().eq(Follow::getUserId, userId).orderByDesc(Follow::getCreateTime).list();
+        ArrayList<Long> ids = new ArrayList<>(list.size());
+        for (Follow follow : list){
+            Long followUserId = follow.getFollowUserId();
+            ids.add(followUserId);
+        }
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<User> users = userMapper.selectByIds(ids);
+        Map<Long, User> userMap = users.stream().collect(Collectors.toMap(User::getId, Function.identity()));
+        List<UserVO> userVOS = new ArrayList<>(ids.size());
+        for (Long id : ids) {
+            User user = userMap.get(id);
+            if (user != null) {
+                userVOS.add(BeanUtil.copyProperties(user, UserVO.class));
+            }
+        }
+        return userVOS;
     }
 }

@@ -1,5 +1,6 @@
 package com.campuslife.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.domain.po.Tag;
 import com.campuslife.mapper.TagMapper;
@@ -8,6 +9,7 @@ import com.campuslife.domain.vo.TagVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,6 +22,11 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements ITagS
     @Override
     public List<TagVO> listAll() {
         // TODO 由你实现：orderByDesc(Tag::getQuestionCount) 查全部 → 组装 TagVO
-        throw new UnsupportedOperationException("TODO: listAll 由你实现");
+        List<Tag> list = lambdaQuery().orderByDesc(Tag::getQuestionCount).list();
+        List<TagVO> tagVOList = new ArrayList<>();
+        for (Tag tag : list) {
+            tagVOList.add(BeanUtil.copyProperties(tag, TagVO.class));
+        }
+        return tagVOList;
     }
 }
