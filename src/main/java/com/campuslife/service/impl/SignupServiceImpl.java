@@ -1,5 +1,7 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campuslife.domain.po.Signup;
 import com.campuslife.mapper.ActivityMapper;
 import com.campuslife.domain.dto.SignupFormDTO;
 import com.campuslife.domain.vo.SignupVO;
@@ -14,9 +16,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class SignupServiceImpl implements ISignupService {
+public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> implements ISignupService {
 
-    private final SignupMapper signupMapper;
     private final ActivityMapper activityMapper;
     private final StringRedisTemplate redisTemplate;
     // 两个 Bean 按字段名注入（signupScript/cancelSignupScript），依赖 -parameters 编译参数

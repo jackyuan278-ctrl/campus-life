@@ -1,11 +1,13 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campuslife.domain.dto.LoginFormDTO;
 import com.campuslife.domain.dto.RegisterFormDTO;
+import com.campuslife.domain.po.User;
 import com.campuslife.domain.vo.LoginVO;
 import com.campuslife.domain.vo.UserVO;
 
-public interface IUserService {
+public interface IUserService extends IService<User> {
 
     /**
      * 注册：校验用户名唯一（重复抛 BizException）→ BCrypt 加密密码（注入 PasswordEncoder）→ 入库

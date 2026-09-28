@@ -1,7 +1,9 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.domain.dto.ActivityFormDTO;
 import com.campuslife.domain.dto.ActivityPageQuery;
+import com.campuslife.domain.po.Activity;
 import com.campuslife.domain.vo.ActivityVO;
 import com.campuslife.mapper.ActivityMapper;
 import com.campuslife.service.IActivityService;
@@ -13,9 +15,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ActivityServiceImpl implements IActivityService {
+public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements IActivityService {
 
-    private final ActivityMapper activityMapper;
     private final SignupMapper signupMapper;
     private final StringRedisTemplate redisTemplate;
 

@@ -1,11 +1,13 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campuslife.domain.dto.SignupFormDTO;
+import com.campuslife.domain.po.Signup;
 import com.campuslife.domain.vo.SignupVO;
 
 import java.util.List;
 
-public interface ISignupService {
+public interface ISignupService extends IService<Signup> {
 
     /**
      * 报名：校验活动存在且报名中 → 执行 signup.lua（0成功 1已满 2重复）

@@ -1,5 +1,7 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.campuslife.domain.po.Follow;
 import com.campuslife.domain.vo.UserVO;
 
 import java.util.List;
@@ -7,7 +9,7 @@ import java.util.List;
 /**
  * 关注服务：关注/取关 + 我的关注列表。
  */
-public interface IFollowService {
+public interface IFollowService extends IService<Follow> {
 
     /**
      * 关注：不能关注自己；tb_follow 唯一键 (user_id, follow_user_id) 兜底，重复关注抛异常

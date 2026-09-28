@@ -1,10 +1,12 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.domain.dto.AnswerFormDTO;
 import com.campuslife.mapper.AnswerMapper;
 import com.campuslife.mapper.LikeMapper;
 import com.campuslife.mapper.QuestionMapper;
 import com.campuslife.mapper.UserMapper;
+import com.campuslife.domain.po.Answer;
 import com.campuslife.service.IAnswerService;
 import com.campuslife.domain.vo.AnswerVO;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +20,8 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class AnswerServiceImpl implements IAnswerService {
+public class AnswerServiceImpl extends ServiceImpl<AnswerMapper, Answer> implements IAnswerService {
 
-    private final AnswerMapper answerMapper;
     private final QuestionMapper questionMapper;
     private final UserMapper userMapper;
     private final LikeMapper likeMapper;

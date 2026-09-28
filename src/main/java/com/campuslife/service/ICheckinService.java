@@ -1,5 +1,7 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.campuslife.domain.po.Checkin;
 import com.campuslife.domain.vo.CheckinVO;
 
 /**
@@ -9,7 +11,7 @@ import com.campuslife.domain.vo.CheckinVO;
  * - 连续天数：从昨天往前 GETBIT 回数 + 今天 1 天
  * - tb_checkin 唯一键 (user_id, checkin_date) 兜底并发重复签到；Redis 是实时事实，DB 是持久化记录
  */
-public interface ICheckinService {
+public interface ICheckinService extends IService<Checkin> {
 
     /**
      * 签到：今天已签抛"今日已签到"；SETBIT + 插入 tb_checkin；

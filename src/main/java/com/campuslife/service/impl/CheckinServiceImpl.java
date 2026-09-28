@@ -1,5 +1,7 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campuslife.domain.po.Checkin;
 import com.campuslife.mapper.CheckinMapper;
 import com.campuslife.service.ICheckinService;
 import com.campuslife.domain.vo.CheckinVO;
@@ -13,9 +15,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-public class CheckinServiceImpl implements ICheckinService {
+public class CheckinServiceImpl extends ServiceImpl<CheckinMapper, Checkin> implements ICheckinService {
 
-    private final CheckinMapper checkinMapper;
     private final StringRedisTemplate stringRedisTemplate;
 
     @Override

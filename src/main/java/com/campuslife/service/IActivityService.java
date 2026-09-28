@@ -1,11 +1,13 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campuslife.domain.dto.ActivityFormDTO;
 import com.campuslife.domain.dto.ActivityPageQuery;
+import com.campuslife.domain.po.Activity;
 import com.campuslife.domain.vo.ActivityVO;
 import com.campuslife.domain.dto.PageDTO;
 
-public interface IActivityService {
+public interface IActivityService extends IService<Activity> {
 
     /**
      * 发布活动：校验时间区间合理（报名截止 <= 活动开始等）→ 入库 status=1

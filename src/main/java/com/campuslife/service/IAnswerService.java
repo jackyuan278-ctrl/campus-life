@@ -1,6 +1,8 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campuslife.domain.dto.AnswerFormDTO;
+import com.campuslife.domain.po.Answer;
 import com.campuslife.domain.vo.AnswerVO;
 
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.List;
 /**
  * 回答服务。点赞与问题共用 tb_like（target_type=2），热度事件同样实时 ZINCRBY。
  */
-public interface IAnswerService {
+public interface IAnswerService extends IService<Answer> {
 
     /**
      * 回答问题：插入 tb_answer；question.answer_count + 1；ZINCRBY hot:questions +5

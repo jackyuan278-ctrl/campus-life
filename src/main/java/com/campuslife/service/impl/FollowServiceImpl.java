@@ -1,5 +1,7 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campuslife.domain.po.Follow;
 import com.campuslife.mapper.FollowMapper;
 import com.campuslife.mapper.UserMapper;
 import com.campuslife.service.IFollowService;
@@ -14,9 +16,8 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class FollowServiceImpl implements IFollowService {
+public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> implements IFollowService {
 
-    private final FollowMapper followMapper;
     private final UserMapper userMapper;
 
     @Override

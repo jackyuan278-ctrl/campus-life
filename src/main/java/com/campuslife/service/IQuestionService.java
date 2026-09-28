@@ -1,8 +1,10 @@
 package com.campuslife.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.campuslife.domain.dto.PageDTO;
 import com.campuslife.domain.dto.QuestionFormDTO;
 import com.campuslife.domain.dto.QuestionPageQuery;
+import com.campuslife.domain.po.Question;
 import com.campuslife.domain.vo.QuestionVO;
 
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.List;
  * - like:user:{userId}:{targetType} Set：我点过赞的目标 id（快速判断 liked）
  * - question:viewed:{id}     Set：24h 内浏览过该问题的用户（浏览去重，随 TTL 过期）
  */
-public interface IQuestionService {
+public interface IQuestionService extends IService<Question> {
 
     /**
      * 发布问题：插入 tb_question；tagIds 非空时批量插入 tb_question_tag，并 tag.question_count + 1

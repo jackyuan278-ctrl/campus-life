@@ -1,10 +1,12 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.domain.dto.CommentFormDTO;
 import com.campuslife.mapper.AnswerMapper;
 import com.campuslife.mapper.CommentMapper;
 import com.campuslife.mapper.QuestionMapper;
 import com.campuslife.mapper.UserMapper;
+import com.campuslife.domain.po.Comment;
 import com.campuslife.service.ICommentService;
 import com.campuslife.domain.vo.CommentVO;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +19,8 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class CommentServiceImpl implements ICommentService {
+public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements ICommentService {
 
-    private final CommentMapper commentMapper;
     private final AnswerMapper answerMapper;
     private final QuestionMapper questionMapper;
     private final UserMapper userMapper;

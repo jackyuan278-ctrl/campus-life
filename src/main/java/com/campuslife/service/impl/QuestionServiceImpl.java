@@ -1,8 +1,10 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.domain.dto.PageDTO;
 import com.campuslife.domain.dto.QuestionFormDTO;
 import com.campuslife.domain.dto.QuestionPageQuery;
+import com.campuslife.domain.po.Question;
 import com.campuslife.mapper.LikeMapper;
 import com.campuslife.mapper.QuestionMapper;
 import com.campuslife.mapper.QuestionTagMapper;
@@ -19,14 +21,13 @@ import java.util.List;
 
 /**
  * 实现留白：核心业务由你实现（IQuestionService 的 javadoc 即契约）。
- * 依赖已注入：questionMapper / userMapper / questionTagMapper / tagMapper / likeMapper
+ * 依赖已注入：baseMapper（QuestionMapper）/ userMapper / questionTagMapper / tagMapper / likeMapper
  * / stringRedisTemplate（Redis）/ objectMapper（缓存 JSON 序列化）
  */
 @Service
 @RequiredArgsConstructor
-public class QuestionServiceImpl implements IQuestionService {
+public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> implements IQuestionService {
 
-    private final QuestionMapper questionMapper;
     private final UserMapper userMapper;
     private final QuestionTagMapper questionTagMapper;
     private final TagMapper tagMapper;

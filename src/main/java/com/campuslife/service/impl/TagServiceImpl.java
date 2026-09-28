@@ -1,5 +1,7 @@
 package com.campuslife.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.campuslife.domain.po.Tag;
 import com.campuslife.mapper.TagMapper;
 import com.campuslife.service.ITagService;
 import com.campuslife.domain.vo.TagVO;
@@ -13,9 +15,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class TagServiceImpl implements ITagService {
-
-    private final TagMapper tagMapper;
+public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements ITagService {
 
     @Override
     public List<TagVO> listAll() {
