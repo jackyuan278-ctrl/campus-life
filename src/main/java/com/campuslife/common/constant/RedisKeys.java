@@ -33,4 +33,24 @@ public final class RedisKeys {
     public static String likeSet(Long userId, int targetType) {
         return "like:user:" + userId + ":" + targetType;
     }
+
+    /** 活动剩余名额（String：发布 SET、报名 DECR、取消 DEL；为 null 时按 quota 初始化） */
+    public static String signupStock(Long activityId) {
+        return "signup:stock:" + activityId;
+    }
+
+    /** 活动已报名用户集合（Set：Lua 内 SISMEMBER 防重复、SADD 补位；取消活动 DEL） */
+    public static String signupUsers(Long activityId) {
+        return "signup:users:" + activityId;
+    }
+
+    /** 活动候补队列（List：RPUSH 入队、LREM 撤报、LRANGE 排位次；取消活动 DEL） */
+    public static String signupWaitlist(Long activityId) {
+        return "signup:waitlist:" + activityId;
+    }
+
+    /** 当月签到 Bitmap（offset = 当月日 - 1），yearMonth 形如 2026-09 */
+    public static String checkinSign(String yearMonth) {
+        return "checkin:sign:" + yearMonth;
+    }
 }
