@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapp
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.common.BizException;
+import com.campuslife.common.constant.LikeTarget;
+import com.campuslife.common.constant.RedisKeys;
 import com.campuslife.domain.dto.PageDTO;
 import com.campuslife.domain.dto.QuestionFormDTO;
 import com.campuslife.domain.dto.QuestionPageQuery;
@@ -133,7 +135,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         // ⑥ liked：一次 SMEMBERS 拿全部点赞，替代 N 次 SISMEMBER；游客不查
         Set<String> likedIds = Set.of();
         if (userId != null) {
-            Set<String> members = stringRedisTemplate.opsForSet().members("like:user:" + userId + ":1");
+            Set<String> members = stringRedisTemplate.opsForSet().members(RedisKeys.likeSet(userId, LikeTarget.QUESTION));
             likedIds = members == null ? Set.of() : members;
         }
         List<QuestionVO> voList = new ArrayList<>(records.size());
@@ -158,15 +160,15 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         // ① 该不该计数：游客直接计；登录用户 NX 抢 24h 坑位，抢到才算首次
         boolean shouldCount = userId == null
                 || BooleanUtil.isTrue(stringRedisTemplate.opsForValue()
-                        .setIfAbsent("question:viewed:" + id + ":" + userId, "1", 24, TimeUnit.HOURS));
+                        .setIfAbsent(RedisKeys.questionViewed(id, userId), "1", 24, TimeUnit.HOURS));
         // ② 要计数：先更 DB（相对自增），再删缓存 —— Cache Aside 的"更新=删不写"
         if (shouldCount) {
             lambdaUpdate().setSql("view_count = view_count + 1").eq(Question::getId, id).update();
-            stringRedisTemplate.opsForZSet().incrementScore("hot:questions", id.toString(), 1);
-            stringRedisTemplate.delete("cache:question:" + id);
+            stringRedisTemplate.opsForZSet().incrementScore(RedisKeys.HOT_QUESTIONS, id.toString(), 1);
+            stringRedisTemplate.delete(RedisKeys.questionCache(id));
         }
         // ③ 读缓存
-        String cacheKey = "cache:question:" + id;
+        String cacheKey = RedisKeys.questionCache(id);
         QuestionVO vo = null;
         String json = stringRedisTemplate.opsForValue().get(cacheKey);
         if (json != null) {
@@ -197,14 +199,14 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         }
         // ⑤ liked 每人不同，必须在缓存之外现算
         vo.setLiked(userId != null && Boolean.TRUE.equals(stringRedisTemplate.opsForSet()
-                .isMember("like:user:" + userId + ":1", id.toString())));
+                .isMember(RedisKeys.likeSet(userId, LikeTarget.QUESTION), id.toString())));
         return vo;
     }
 
     @Override
     public List<QuestionVO> queryHot(int top) {
-        String cacheKey = "cache:hot:questions";
-        String lockKey = "lock:cache:hot:questions";
+        String cacheKey = RedisKeys.HOT_QUESTIONS_CACHE;
+        String lockKey = RedisKeys.HOT_QUESTIONS_LOCK;
         // 1. 读取缓存
         String jsonStr = stringRedisTemplate.opsForValue().get(cacheKey);
         if (jsonStr != null) {
@@ -218,7 +220,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         }
         List<QuestionVO> resultList;
         try {
-            Set<String> idStrSet = stringRedisTemplate.opsForZSet().reverseRange("hot:questions", 0, top - 1);
+            Set<String> idStrSet = stringRedisTemplate.opsForZSet().reverseRange(RedisKeys.HOT_QUESTIONS, 0, top - 1);
             if (CollectionUtils.isEmpty(idStrSet)) {
                 resultList = List.of();
                 stringRedisTemplate.opsForValue().set(cacheKey,JSONUtil.toJsonStr(resultList), 30, TimeUnit.SECONDS);
@@ -259,7 +261,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Override
     public void like(Long id, Long userId) {
-        Boolean exist = stringRedisTemplate.opsForSet().isMember("like:user:" + userId + ":1", id.toString());
+        Boolean exist = stringRedisTemplate.opsForSet().isMember(RedisKeys.likeSet(userId, LikeTarget.QUESTION), id.toString());
         if (Boolean.TRUE.equals(exist)) {
             throw new BizException(400,"请勿重复短暂");
         }
@@ -268,7 +270,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             throw new BizException(400,"请求错误");
         }
         LikeRecord likeRecord = LikeRecord.builder()
-                .targetType(1)
+                .targetType(LikeTarget.QUESTION)
                 .createTime(LocalDateTime.now())
                 .targetId(id)
                 .userId(userId).build();
@@ -278,13 +280,13 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
             throw new BizException(400, "请勿重复点赞");
         }
         lambdaUpdate().setSql("like_count = like_count + 1").eq(Question::getId, id).update();
-        stringRedisTemplate.opsForZSet().incrementScore("hot:questions", id.toString(), 3);
-        stringRedisTemplate.opsForSet().add("like:user:" + userId + ":1", id.toString());
+        stringRedisTemplate.opsForZSet().incrementScore(RedisKeys.HOT_QUESTIONS, id.toString(), 3);
+        stringRedisTemplate.opsForSet().add(RedisKeys.likeSet(userId, LikeTarget.QUESTION), id.toString());
     }
 
     @Override
     public void unlike(Long id, Long userId) {
-        Boolean exist = stringRedisTemplate.opsForSet().isMember("like:user:" + userId + ":1", id.toString());
+        Boolean exist = stringRedisTemplate.opsForSet().isMember(RedisKeys.likeSet(userId, LikeTarget.QUESTION), id.toString());
         if (!Boolean.TRUE.equals(exist)) {
             return;
         }
@@ -292,11 +294,11 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         int deleted = likeMapper.delete(Wrappers.<LikeRecord>lambdaQuery()
                     .eq(LikeRecord::getUserId, userId)
                     .eq(LikeRecord::getTargetId, id)
-                    .eq(LikeRecord::getTargetType, 1));
+                    .eq(LikeRecord::getTargetType, LikeTarget.QUESTION));
         if (deleted ==0) {
                 return;}
         lambdaUpdate().setSql("like_count = like_count - 1").eq(Question::getId, id).gt(Question::getLikeCount, 0).update();
-        stringRedisTemplate.opsForZSet().incrementScore("hot:questions", id.toString(), -3);
-        stringRedisTemplate.opsForSet().remove("like:user:" + userId + ":1",id.toString());
+        stringRedisTemplate.opsForZSet().incrementScore(RedisKeys.HOT_QUESTIONS, id.toString(), -3);
+        stringRedisTemplate.opsForSet().remove(RedisKeys.likeSet(userId, LikeTarget.QUESTION), id.toString());
     }
 }
