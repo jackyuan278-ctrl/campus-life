@@ -9,8 +9,8 @@ const follows = ref([])
 
 async function load() {
   me.value = await userApi.me()
-  checkin.value = await checkinApi.mine()
   follows.value = await followApi.mine()
+  checkin.value = await checkinApi.mine().catch(() => checkin.value)
 }
 
 async function doCheckin() {
@@ -29,8 +29,8 @@ async function unfollow(u) {
   } catch {
     return
   }
-  await followApi.unfollow(u.userId)
-  follows.value = follows.value.filter((x) => x.userId !== u.userId)
+  await followApi.unfollow(u.id)
+  follows.value = follows.value.filter((x) => x.id !== u.id)
   ElMessage.success('已取消关注')
 }
 
@@ -73,7 +73,7 @@ onMounted(load)
 
     <el-card shadow="never" class="card">
       <template #header><b>我的关注（{{ follows.length }}）</b></template>
-      <div v-for="u in follows" :key="u.userId" class="follow-row">
+      <div v-for="u in follows" :key="u.id" class="follow-row">
         <el-avatar :size="32" class="avatar small">{{ (u.nickname || '?').slice(0, 1) }}</el-avatar>
         <span class="f-nick">{{ u.nickname }}</span>
         <el-button size="small" round plain @click="unfollow(u)">取消关注</el-button>

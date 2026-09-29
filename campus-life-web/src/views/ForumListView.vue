@@ -28,7 +28,7 @@ async function load() {
     pageSize
   })
   list.value = res.list
-  total.value = res.total
+  total.value = Number(res.total)
 }
 
 async function loadSide() {

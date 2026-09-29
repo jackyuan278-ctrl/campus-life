@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { activityApi, signupApi } from '@/api'
-import { STATUS_TEXT } from '@/mock/activities'
+import { STATUS_TEXT } from '@/constants/activity'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { activityApi } from '@/api'
-import { STATUS_TEXT } from '@/mock/activities'
+import { STATUS_TEXT } from '@/constants/activity'
 
 const router = useRouter()
 const loading = ref(false)
@@ -22,7 +22,7 @@ async function load() {
   try {
     const data = await activityApi.page({ ...query })
     list.value = data.list
-    total.value = data.total
+    total.value = Number(data.total)
   } finally {
     loading.value = false
   }

@@ -28,6 +28,14 @@ public class UserInfoInterceptor implements HandlerInterceptor {
                     || request.getRequestURI().startsWith("/questions")
                     || request.getRequestURI().startsWith("/answers")
                     || "/tags".equals(request.getRequestURI()))) {
+            String auth = request.getHeader("Authorization");
+            if (StringUtils.hasText(auth) && auth.startsWith("Bearer ")) {
+                try {
+                    UserContext.setUser(jwtTool.parseToken(auth.substring(7)));
+                } catch (JwtException ignored) {
+                    // 软认证：token 失效按未登录处理，不拦浏览
+                }
+            }
             return true;
         }
         String auth = request.getHeader("Authorization");

@@ -1,7 +1,7 @@
 package com.campuslife.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campuslife.common.BizException;
 import com.campuslife.domain.po.Follow;
@@ -44,8 +44,9 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public void unfollow(Long targetUserId, Long userId) {
-        LambdaQueryChainWrapper<Follow> eq = lambdaQuery().eq(Follow::getFollowUserId, targetUserId).eq(Follow::getUserId, userId);
-        remove(eq);
+        remove(Wrappers.<Follow>lambdaQuery()
+                .eq(Follow::getUserId, userId)
+                .eq(Follow::getFollowUserId, targetUserId));
     }
 
     @Override

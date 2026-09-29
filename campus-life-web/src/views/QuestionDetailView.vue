@@ -8,7 +8,7 @@ import { useUserStore } from '@/stores/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const id = Number(route.params.id)
+const id = route.params.id
 
 const question = ref(null)
 const answers = ref([])
@@ -31,10 +31,10 @@ function requireLogin() {
 
 async function load() {
   question.value = await questionApi.detail(id)
-  answers.value = await answerApi.list(id)
+  answers.value = await answerApi.list(id).catch(() => [])
   if (userStore.token) {
     const mine = await followApi.mine()
-    isFollowing.value = mine.some((u) => u.userId === question.value.userId)
+    isFollowing.value = mine.some((u) => u.id === question.value.userId)
   }
 }
 
@@ -113,7 +113,7 @@ async function toggleFollow() {
     isFollowing.value = false
     ElMessage.success('已取消关注')
   } else {
-    await followApi.follow({ userId: question.value.userId, nickname: question.value.authorNickname })
+    await followApi.follow(question.value.userId)
     isFollowing.value = true
     ElMessage.success('关注成功')
   }
