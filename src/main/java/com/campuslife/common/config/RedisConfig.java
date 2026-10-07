@@ -18,12 +18,12 @@ public class RedisConfig {
         return redisScript;
     }
 
-    /** 取消脚本：名额回补+候补队头补位（返回 -1未报名 0无补位 >0补位用户ID） */
+    /** 取消脚本：名额回补+候补队头补位（返回字符串："-1"未报名 "0"无补位 其他=补位者 userId） */
     @Bean
-    public DefaultRedisScript<Long> cancelSignupScript(@Value("classpath:lua/cancel_signup.lua") Resource script) {
-        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+    public DefaultRedisScript<String> cancelSignupScript(@Value("classpath:lua/cancel_signup.lua") Resource script) {
+        DefaultRedisScript<String> redisScript = new DefaultRedisScript<>();
         redisScript.setLocation(script);
-        redisScript.setResultType(Long.class);
+        redisScript.setResultType(String.class);
         return redisScript;
     }
 }
