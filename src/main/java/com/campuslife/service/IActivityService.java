@@ -29,4 +29,8 @@ public interface IActivityService extends IService<Activity> {
      * 发布人取消活动：校验归属 → status=4；已报名用户如何处理（退名额/通知）由你设计
      */
     void cancelActivity(Long id, Long publisherId);
+
+    void saveDoc(Activity activity);
+
+    void deleteDoc(Long id);
 }

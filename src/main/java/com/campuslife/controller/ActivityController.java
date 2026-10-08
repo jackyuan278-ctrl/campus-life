@@ -3,7 +3,9 @@ package com.campuslife.controller;
 import com.campuslife.domain.dto.ActivityFormDTO;
 import com.campuslife.domain.dto.ActivityPageQuery;
 import com.campuslife.domain.vo.ActivityVO;
+import com.campuslife.es.ActivityDoc;
 import com.campuslife.service.IActivityService;
+import com.campuslife.service.IActivitySearchService;
 import com.campuslife.common.Result;
 import com.campuslife.domain.dto.PageDTO;
 import com.campuslife.common.interceptor.UserContext;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ActivityController {
 
     private final IActivityService activityService;
+    private final IActivitySearchService activitySearchService;
 
     /** 发布活动（登录） */
     @PostMapping
@@ -34,6 +38,14 @@ public class ActivityController {
     @GetMapping
     public Result<PageDTO<ActivityVO>> page(ActivityPageQuery query) {
         return Result.success(activityService.queryActivityPage(query));
+    }
+
+    /** 活动全文搜索（ES + IK 分词，免登录；关键词为空返回空页） */
+    @GetMapping("/search")
+    public Result<PageDTO<ActivityDoc>> search(@RequestParam(defaultValue = "") String keyword,
+                                               @RequestParam(defaultValue = "1") int page,
+                                               @RequestParam(defaultValue = "10") int pageSize) {
+        return Result.success(activitySearchService.search(keyword, page, pageSize));
     }
 
     /** 活动详情（免登录；带 token 时附带我的报名状态） */

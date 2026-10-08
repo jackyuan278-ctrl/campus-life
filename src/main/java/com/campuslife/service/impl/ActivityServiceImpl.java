@@ -12,26 +12,32 @@ import com.campuslife.domain.dto.ActivityPageQuery;
 import com.campuslife.domain.po.Activity;
 import com.campuslife.domain.po.Signup;
 import com.campuslife.domain.vo.ActivityVO;
+import com.campuslife.es.ActivityDoc;
+import com.campuslife.es.ActivityRepository;
 import com.campuslife.mapper.ActivityMapper;
 import com.campuslife.service.IActivityService;
 import com.campuslife.domain.dto.PageDTO;
 import com.campuslife.mapper.SignupMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements IActivityService {
 
     private final SignupMapper signupMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final ActivityRepository activityRepository;
 
     // ============ 以下为核心业务（面试深挖区），由你实现，依赖已注入 ============
 
@@ -59,6 +65,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         save(activity);
         stringRedisTemplate.opsForValue().set(RedisKeys.signupStock(activity.getId()),
                 activity.getQuota().toString());
+        saveDoc(activity);
         return activity.getId();
     }
 
@@ -120,9 +127,45 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void cancelActivity(Long id, Long publisherId) {
-        // TODO 由你实现：校验归属 → status=4（已取消幂等返回）；报名中的活动把已报名 tb_signup 1→3 并 DEL users/stock/waitlist 三个 key
-        // 通知已报名用户（tb_notification）由你决定是否做
-        throw new UnsupportedOperationException("TODO: cancelActivity 由你实现");
+        Activity activity = lambdaQuery().eq(Activity::getId, id).eq(Activity::getPublisherId, publisherId).one();
+        if (activity==null){
+            throw new BizException(400,"活动不存在或者权限不足");
+        }
+        // 仅报名中可取消，其余状态静默返回
+        if (!activity.getStatus().equals(1)) {
+            return;
+        }
+        activity.setStatus(4);
+        updateById(activity);
+        signupMapper.update(null, Wrappers.<Signup>lambdaUpdate()
+                .eq(Signup::getActivityId, id)
+                .in(Signup::getStatus, 1, 2)
+                .set(Signup::getStatus, 3));
+        stringRedisTemplate.delete(List.of(
+                RedisKeys.signupStock(id),
+                RedisKeys.signupUsers(id),
+                RedisKeys.signupWaitlist(id)));
+        deleteDoc(id);
+    }
+
+    @Override
+    public void saveDoc(Activity activity) {
+        // 索引是旁路：ES 异常只记日志，不拖垮发布主流程
+        try {
+            activityRepository.save(BeanUtil.copyProperties(activity, ActivityDoc.class));
+        } catch (Exception e) {
+            log.warn("活动索引写入失败，不影响主流程 activityId={}", activity.getId(), e);
+        }
+    }
+
+    @Override
+    public void deleteDoc(Long id) {
+        try {
+            activityRepository.deleteById(id);
+        } catch (Exception e) {
+            log.warn("活动索引删除失败，不影响主流程 activityId={}", id, e);
+        }
     }
 }

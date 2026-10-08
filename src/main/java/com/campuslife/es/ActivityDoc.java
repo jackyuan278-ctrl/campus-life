@@ -2,12 +2,15 @@ package com.campuslife.es;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ES 活动索引文档（关键词搜索用）；服务器需装 IK 分词插件，ik_max_word/ik_smart 才生效
@@ -37,4 +40,8 @@ public class ActivityDoc {
 
     @Field(type = FieldType.Keyword, index = false)
     private String coverUrl;
+
+    /** 搜索命中的高亮片段（仅查询时回填给前端，不参与 ES 映射） */
+    @Transient
+    private Map<String, List<String>> highlights;
 }

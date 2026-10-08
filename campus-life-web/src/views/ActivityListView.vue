@@ -20,7 +20,10 @@ const statusOptions = [
 async function load() {
   loading.value = true
   try {
-    const data = await activityApi.page({ ...query })
+    const keyword = query.keyword.trim()
+    const data = keyword
+      ? await activityApi.search({ keyword, page: query.page, pageSize: query.pageSize })
+      : await activityApi.page({ ...query })
     list.value = data.list
     total.value = Number(data.total)
   } finally {
@@ -42,6 +45,19 @@ function handleReset() {
 
 function statusTagType(status) {
   return { 1: 'success', 2: 'primary', 3: 'info', 4: 'danger' }[status] || 'info'
+}
+
+// 解析 ES 高亮片段（<em> 包裹命中词），返回 [{text, mark}]；不用 v-html，避免注入
+function hlParts(fragment, fallback) {
+  if (!fragment) return [{ text: fallback, mark: false }]
+  const parts = []
+  let mark = false
+  for (const token of fragment.split(/(<\/?em>)/)) {
+    if (token === '<em>') mark = true
+    else if (token === '</em>') mark = false
+    else if (token) parts.push({ text: token, mark })
+  }
+  return parts
 }
 
 onMounted(load)
@@ -66,7 +82,7 @@ onMounted(load)
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" style="width: 130px">
+          <el-select v-model="query.status" style="width: 130px" :disabled="!!query.keyword.trim()">
             <el-option v-for="opt in statusOptions" :key="String(opt.value)" :label="opt.label" :value="opt.value" />
           </el-select>
         </el-form-item>
@@ -83,7 +99,14 @@ onMounted(load)
           <div class="card activity-card" @click="router.push('/activities/' + item.id)">
             <img class="cover" :src="item.coverUrl" :alt="item.title" />
             <div class="body">
-              <div class="title">{{ item.title }}</div>
+              <div class="title">
+                <span v-for="(seg, i) in hlParts(item.highlights?.title?.[0], item.title)" :key="i"
+                      :class="{ hl: seg.mark }">{{ seg.text }}</span>
+              </div>
+              <div v-if="item.highlights?.description?.[0]" class="desc">
+                <span v-for="(seg, i) in hlParts(item.highlights.description[0], '')" :key="i"
+                      :class="{ hl: seg.mark }">{{ seg.text }}</span>
+              </div>
               <div class="meta">
                 <div><el-icon class="meta-icon"><Location /></el-icon>{{ item.location }}</div>
                 <div><el-icon class="meta-icon"><Clock /></el-icon>{{ item.startTime }}</div>
@@ -118,5 +141,19 @@ onMounted(load)
 <style scoped>
 .ml-8 {
   margin-left: 8px;
+}
+
+.desc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hl {
+  color: var(--el-color-primary);
+  font-weight: 600;
 }
 </style>

@@ -18,6 +18,9 @@ export const activityApi = {
   page(params = {}) {
     return request.get('/activities', { params })
   },
+  search(params = {}) {
+    return request.get('/activities/search', { params })
+  },
   detail(id) {
     return request.get(`/activities/${id}`)
   },
