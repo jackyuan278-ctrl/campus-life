@@ -8,10 +8,10 @@ const router = useRouter()
 const loading = ref(false)
 const list = ref([])
 const total = ref(0)
-const query = reactive({ keyword: '', status: null, page: 1, pageSize: 8 })
+const query = reactive({ keyword: '', status: '', page: 1, pageSize: 8 })
 
 const statusOptions = [
-  { label: '全部状态', value: null },
+  { label: '全部状态', value: '' },
   { label: '报名中', value: 1 },
   { label: '进行中', value: 2 },
   { label: '已结束', value: 3 }
@@ -38,7 +38,7 @@ function handleSearch() {
 
 function handleReset() {
   query.keyword = ''
-  query.status = null
+  query.status = ''
   query.page = 1
   load()
 }
