@@ -17,6 +17,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -42,10 +43,7 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         if (activity == null) {
             throw new BizException(400,"活动不存在");
         }
-        Integer status = activity.getStatus();
-        if (status != 1) {
-            throw new BizException(400,"活动不在报名时间");
-        }
+        validateSignupWindow(activity);
         List<String> signList = new ArrayList<>();
         signList.add(RedisKeys.signupStock(activityId));
         signList.add(RedisKeys.signupUsers(activityId));
@@ -71,10 +69,7 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         if (activity == null) {
             throw new BizException(400,"活动不存在");
         }
-        Integer status = activity.getStatus();
-        if (status != 1) {
-            throw new BizException(400,"活动不在报名时间");
-        }
+        validateSignupWindow(activity);
         Signup one = lambdaQuery().eq(Signup::getUserId, userId).eq(Signup::getActivityId, activityId).one();
         if (one == null) {
             try {
@@ -89,6 +84,19 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         }
 
         stringRedisTemplate.opsForList().rightPush(RedisKeys.signupWaitlist(activityId),userId.toString());
+    }
+
+    private void validateSignupWindow(Activity activity) {
+        if (activity.getStatus() != 1) {
+            throw new BizException(400, "活动不在报名时间");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(activity.getSignupStartTime())) {
+            throw new BizException(400, "报名尚未开始");
+        }
+        if (now.isAfter(activity.getSignupEndTime())) {
+            throw new BizException(400, "报名已结束");
+        }
     }
 
     @Override
