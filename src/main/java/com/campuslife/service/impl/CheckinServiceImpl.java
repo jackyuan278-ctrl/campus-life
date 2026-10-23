@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 签到：Bitmap checkin:sign:{yyyy-MM}，offset = 当月日 - 1。
+ * 签到：Bitmap checkin:sign:{userId}:{yyyy-MM}，offset = 当月日 - 1。
  * streak 以 tb_checkin 为准（查今天→查昨天→0），天然跨月。
  */
 @Service
@@ -32,7 +32,7 @@ public class CheckinServiceImpl extends ServiceImpl<CheckinMapper, Checkin> impl
     public CheckinVO checkin(Long userId) {
         LocalDate today = LocalDate.now();
         YearMonth ym = YearMonth.from(today);
-        String monthKey = RedisKeys.checkinSign(ym.toString());
+        String monthKey = RedisKeys.checkinSign(userId, ym.toString());
 
         // SETBIT 返回旧值做原子去重：旧值 true 说明今天已签，位本就是 1，重复置位无副作用
         Boolean oldBit = stringRedisTemplate.opsForValue()
@@ -60,7 +60,7 @@ public class CheckinServiceImpl extends ServiceImpl<CheckinMapper, Checkin> impl
     public CheckinVO queryMine(Long userId) {
         LocalDate today = LocalDate.now();
         YearMonth ym = YearMonth.from(today);
-        String monthKey = RedisKeys.checkinSign(ym.toString());
+        String monthKey = RedisKeys.checkinSign(userId, ym.toString());
         return buildVO(userId, today, ym, monthKey);
     }
 

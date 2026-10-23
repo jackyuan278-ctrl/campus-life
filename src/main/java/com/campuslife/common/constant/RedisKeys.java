@@ -49,8 +49,8 @@ public final class RedisKeys {
         return "signup:waitlist:" + activityId;
     }
 
-    /** 当月签到 Bitmap（offset = 当月日 - 1），yearMonth 形如 2026-09 */
-    public static String checkinSign(String yearMonth) {
-        return "checkin:sign:" + yearMonth;
+    /** 用户当月签到 Bitmap（offset = 当月日 - 1），yearMonth 形如 2026-09 */
+    public static String checkinSign(Long userId, String yearMonth) {
+        return "checkin:sign:" + userId + ":" + yearMonth;
     }
 }
