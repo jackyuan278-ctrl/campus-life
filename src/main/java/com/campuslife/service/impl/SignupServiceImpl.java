@@ -47,11 +47,23 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         List<String> signList = new ArrayList<>();
         signList.add(RedisKeys.signupStock(activityId));
         signList.add(RedisKeys.signupUsers(activityId));
-        Long result = stringRedisTemplate.execute(signupScript, signList, userId.toString(), activity.getQuota().toString());
+        long result = stringRedisTemplate.execute(signupScript, signList, userId.toString(), activity.getQuota().toString());
         if (result == 0) {
-            boolean updated = lambdaUpdate().eq(Signup::getActivityId, activityId).set(Signup::getStatus, 1).eq(Signup::getUserId, userId).update();
-            if (!updated) {
-                save(new Signup().setActivityId(activityId).setUserId(userId).setStatus(1));
+            try {
+                boolean updated = lambdaUpdate().eq(Signup::getActivityId, activityId)
+                        .set(Signup::getStatus, 1)
+                        .eq(Signup::getUserId, userId)
+                        .update();
+                if (!updated) {
+                    save(new Signup().setActivityId(activityId).setUserId(userId).setStatus(1));
+                }
+            } catch (Exception e) {
+                // MySQL 写入失败时，回滚 Redis 中刚刚完成的报名操作
+                stringRedisTemplate.opsForSet()
+                        .remove(RedisKeys.signupUsers(activityId), userId.toString());
+                stringRedisTemplate.opsForValue()
+                        .increment(RedisKeys.signupStock(activityId));
+                throw e;
             }
         }
         if (result == 1) {
