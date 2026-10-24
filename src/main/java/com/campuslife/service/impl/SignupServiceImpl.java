@@ -127,10 +127,21 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         }
         if (one.getStatus() == 2) {
             stringRedisTemplate.opsForList().remove(RedisKeys.signupWaitlist(activityId), 1, userId.toString());
-            lambdaUpdate().eq(Signup::getId, one.getId()).set(Signup::getStatus, 3).update();
+            try {
+                boolean updated = lambdaUpdate().eq(Signup::getId, one.getId())
+                        .set(Signup::getStatus, 3)
+                        .update();
+                if (!updated) {
+                    throw new BizException(500, "取消候补失败");
+                }
+            } catch (Exception e) {
+                // MySQL 更新失败时，恢复 Redis 中的候补记录
+                stringRedisTemplate.opsForList()
+                        .rightPush(RedisKeys.signupWaitlist(activityId), userId.toString());
+                throw e;
+            }
             return;
         }
-
         if (one.getStatus() !=1) {
             throw new BizException(400,"未报名");
         }
