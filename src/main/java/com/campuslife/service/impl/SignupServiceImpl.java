@@ -156,15 +156,21 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
             throw new BizException(400,"未报名");
         }
         try {
-            lambdaUpdate().eq(Signup::getUserId, userId)
+            boolean cancelled = lambdaUpdate().eq(Signup::getUserId, userId)
                     .eq(Signup::getActivityId, activityId)
                     .set(Signup::getStatus, 3)
                     .update();
+            if (!cancelled) {
+                throw new BizException(500, "取消报名失败");
+            }
             if (!result.equals("0")) {
-                lambdaUpdate().eq(Signup::getUserId, Long.valueOf(result))
+                boolean promoted = lambdaUpdate().eq(Signup::getUserId, Long.valueOf(result))
                         .eq(Signup::getActivityId, activityId)
                         .set(Signup::getStatus, 1)
                         .update();
+                if (!promoted) {
+                    throw new BizException(500, "候补补位失败");
+                }
             }
         } catch (Exception e) {
             // MySQL 更新失败时，尽量恢复 Redis 中取消报名前的状态
