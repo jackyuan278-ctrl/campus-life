@@ -185,6 +185,11 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
                 // 候补用户补位失败时，恢复到候补队列末尾
                 stringRedisTemplate.opsForList()
                         .rightPush(RedisKeys.signupWaitlist(activityId), result);
+                // 原报名用户的数据库状态已经改为取消，失败时恢复为已报名
+                lambdaUpdate().eq(Signup::getUserId, userId)
+                        .eq(Signup::getActivityId, activityId)
+                        .set(Signup::getStatus, 1)
+                        .update();
             }
             throw e;
         }
