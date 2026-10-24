@@ -30,7 +30,9 @@ public class ActivitySearchServiceImpl implements IActivitySearchService {
             return new PageDTO<>(0L, List.of());
         }
         NativeQuery query = NativeQuery.builder()
-                .withQuery(q -> q.multiMatch(m -> m.query(keyword).fields("title^2", "description")))
+                .withQuery(q -> q.bool(b -> b
+                        .must(m -> m.multiMatch(mm -> mm.query(keyword).fields("title^2", "description")))
+                        .mustNot(m -> m.term(t -> t.field("status").value(4)))))
                 .withPageable(PageRequest.of(page - 1, pageSize))
                 .withHighlightQuery(new HighlightQuery(
                         new Highlight(List.of(new HighlightField("title"), new HighlightField("description"))),

@@ -26,11 +26,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     private final PasswordEncoder passwordEncoder;
     private final JwtTool jwtTool;
 
-    // ============ 以下为核心业务（面试深挖区），由你实现，依赖已注入 ============
-
     @Override
     public void register(RegisterFormDTO form) {
-        // TODO 由你实现：用户名查重（重复抛 BizException）→ passwordEncoder.encode → insert
         String username = form.getUsername();
         boolean exists = lambdaQuery().eq(User::getUsername, username).exists();
         if (exists) {
@@ -53,7 +50,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     public LoginVO login(LoginFormDTO form) {
-        // TODO 由你实现：查用户 → passwordEncoder.matches → jwtTool.createToken
         // 用户不存在与密码错误用同一文案"用户名或密码错误"，防账号枚举
         String username = form.getUsername();
         User user = lambdaQuery().eq(User::getUsername, username).one();
@@ -77,7 +73,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     public UserVO queryMe(Long userId) {
-        // TODO 由你实现：selectById → BeanUtil.copyProperties(user, UserVO.class)
         User user = lambdaQuery().eq(User::getId, userId).one();
         if (user == null) {
             throw new BizException(400,"用户不存在");
