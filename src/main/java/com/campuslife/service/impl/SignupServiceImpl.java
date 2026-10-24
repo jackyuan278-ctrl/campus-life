@@ -182,6 +182,9 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
             } else {
                 stringRedisTemplate.opsForSet()
                         .remove(RedisKeys.signupUsers(activityId), result);
+                // 候补用户补位失败时，恢复到候补队列末尾
+                stringRedisTemplate.opsForList()
+                        .rightPush(RedisKeys.signupWaitlist(activityId), result);
             }
             throw e;
         }
