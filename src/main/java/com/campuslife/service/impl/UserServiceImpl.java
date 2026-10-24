@@ -59,6 +59,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (!matches) {
             throw new BizException(400,"用户名或密码错误");
         }
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
+            throw new BizException(403, "账号已被封禁");
+        }
         return LoginVO.builder()
                 .token(jwtTool.createToken(user.getId()))
                 .username(username)
