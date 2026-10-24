@@ -13,6 +13,7 @@ import com.campuslife.domain.vo.UserVO;
 import com.campuslife.mapper.UserMapper;
 import com.campuslife.service.IUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,14 +43,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setPassword(passwordEncoder.encode(password));
         user.setNickname(nickname);
         user.setCreateTime(LocalDateTime.now());
-        save(user);
+        try {
+            save(user);
+        } catch (DuplicateKeyException e) {
+            // 数据库唯一索引兜底处理并发注册同名用户
+            throw new BizException(400, "用户名已存在");
+        }
     }
 
     @Override
     public LoginVO login(LoginFormDTO form) {
         // TODO 由你实现：查用户 → passwordEncoder.matches → jwtTool.createToken
         // 用户不存在与密码错误用同一文案"用户名或密码错误"，防账号枚举
-        String password = form.getPassword();
         String username = form.getUsername();
         User user = lambdaQuery().eq(User::getUsername, username).one();
         if (user == null) {

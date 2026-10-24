@@ -33,6 +33,9 @@ public class User implements Serializable {
     /** 0学生 1管理员 */
     private Integer role;
 
+    /** 1正常 0封禁 */
+    private Integer status;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
