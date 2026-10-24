@@ -57,6 +57,13 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
         if (!activityStart.isBefore(activityEnd)) {
             throw new BizException(400, "活动开始时间必须早于结束时间");
         }
+        LocalDateTime now = LocalDateTime.now();
+        if (activityStart.isBefore(now)) {
+            throw new BizException(400, "活动开始时间不能早于当前时间");
+        }
+        if (activityEnd.isBefore(now)) {
+            throw new BizException(400, "活动结束时间不能早于当前时间");
+        }
         Activity activity = BeanUtil.copyProperties(form, Activity.class);
         activity.setPublisherId(publisherId);
         activity.setCreateTime(LocalDateTime.now());
