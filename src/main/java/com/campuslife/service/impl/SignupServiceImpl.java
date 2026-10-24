@@ -47,11 +47,23 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         List<String> signList = new ArrayList<>();
         signList.add(RedisKeys.signupStock(activityId));
         signList.add(RedisKeys.signupUsers(activityId));
-        Long result = stringRedisTemplate.execute(signupScript, signList, userId.toString(), activity.getQuota().toString());
+        long result = stringRedisTemplate.execute(signupScript, signList, userId.toString(), activity.getQuota().toString());
         if (result == 0) {
-            boolean updated = lambdaUpdate().eq(Signup::getActivityId, activityId).set(Signup::getStatus, 1).eq(Signup::getUserId, userId).update();
-            if (!updated) {
-                save(new Signup().setActivityId(activityId).setUserId(userId).setStatus(1));
+            try {
+                boolean updated = lambdaUpdate().eq(Signup::getActivityId, activityId)
+                        .set(Signup::getStatus, 1)
+                        .eq(Signup::getUserId, userId)
+                        .update();
+                if (!updated) {
+                    save(new Signup().setActivityId(activityId).setUserId(userId).setStatus(1));
+                }
+            } catch (Exception e) {
+                // MySQL 写入失败时，回滚 Redis 中刚刚完成的报名操作
+                stringRedisTemplate.opsForSet()
+                        .remove(RedisKeys.signupUsers(activityId), userId.toString());
+                stringRedisTemplate.opsForValue()
+                        .increment(RedisKeys.signupStock(activityId));
+                throw e;
             }
         }
         if (result == 1) {
@@ -131,11 +143,30 @@ public class SignupServiceImpl extends ServiceImpl<SignupMapper, Signup> impleme
         String result = stringRedisTemplate.execute(cancelSignupScript, signupList, userId.toString());
         if (result.equals("-1")) {
             throw new BizException(400,"未报名");
-        }else if (result.equals("0")) {
-            lambdaUpdate().eq(Signup::getUserId, userId).eq(Signup::getActivityId, activityId).set(Signup::getStatus,3).update();
-        }else{
-            lambdaUpdate().eq(Signup::getUserId, userId).eq(Signup::getActivityId, activityId).set(Signup::getStatus,3).update();
-            lambdaUpdate().eq(Signup::getUserId, Long.valueOf(result)).eq(Signup::getActivityId, activityId).set(Signup::getStatus,1).update();
+        }
+        try {
+            lambdaUpdate().eq(Signup::getUserId, userId)
+                    .eq(Signup::getActivityId, activityId)
+                    .set(Signup::getStatus, 3)
+                    .update();
+            if (!result.equals("0")) {
+                lambdaUpdate().eq(Signup::getUserId, Long.valueOf(result))
+                        .eq(Signup::getActivityId, activityId)
+                        .set(Signup::getStatus, 1)
+                        .update();
+            }
+        } catch (Exception e) {
+            // MySQL 更新失败时，尽量恢复 Redis 中取消报名前的状态
+            stringRedisTemplate.opsForSet()
+                    .add(RedisKeys.signupUsers(activityId), userId.toString());
+            if (result.equals("0")) {
+                stringRedisTemplate.opsForValue()
+                        .decrement(RedisKeys.signupStock(activityId));
+            } else {
+                stringRedisTemplate.opsForSet()
+                        .remove(RedisKeys.signupUsers(activityId), result);
+            }
+            throw e;
         }
     }
 
